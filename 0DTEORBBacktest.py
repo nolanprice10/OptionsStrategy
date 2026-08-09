@@ -90,3 +90,15 @@ def run_backtest():
 
     trades = []
     balance = starting_balance
+
+    for day in sessions:
+        day_df = df[df['date'] == day]
+        result = simulate_day(day_df, day)
+        if result is None:
+            continue
+
+        risk_amount = balance * risk_per_trade
+        pnl_dollars = result['pnl'] * risk_amount
+        balance += pnl_dollars
+
+        
