@@ -83,3 +83,10 @@ def simulate_day(day_df, day):
     option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
     return {'entry_time': entry_time, 'exit_time': last_row.name, 'direction': direction,
             'pnl': option_move, 'exit_reason': 'eod_exit'}
+
+def run_backtest():
+    df = load_data(ticker, period, interval)
+    sessions = get_daily_sessions(df)
+
+    trades = []
+    balance = starting_balance
