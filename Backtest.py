@@ -16,17 +16,15 @@ risk_per_trade = 1
 
 def load_data(ticker, period, interval):
     df = yf.download(ticker, period=period, interval=interval, auto_adjust=True)
+    df.columns = df.columns.droplevel(1)
+    print(df.columns)
+    print(type(df['Volume']))
     df['ma9'] = df['Close'].rolling(9).mean()
     df['ma20'] = df['Close'].rolling(20).mean()
     df['vol_avg20'] = df['Volume'].rolling(20).mean()
     df['cross_up'] = (df['ma9'] > df['ma20']) & (df['ma9'].shift(1) <= df['ma20'].shift(1))
     df['cross_down'] = (df['ma9'] < df['ma20']) & (df['ma9'].shift(1) >= df['ma20'].shift(1))
-    df = df.reset_index(drop=True)
-    left = df['Volume']
-    right = df['vol_avg20']
-    left, right = left.align(right * vol_multiplier, join='inner', axis=0)
-    right = right * vol_multiplier
-    df['vol_confirm'] = left > right
+    df['vol_confirm'] = df['Volume'] > (df['vol_avg20'] * vol_multiplier)
     df['buy_call'] = df['cross_up'] & df['vol_confirm']
     df['buy_put'] = df['cross_down'] & df['vol_confirm']
     return df.dropna(subset=['ma9', 'ma20', 'vol_avg20']).reset_index()
