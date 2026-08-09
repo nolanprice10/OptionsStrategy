@@ -26,3 +26,29 @@ def load_data(ticker, period, interval):
     df['buy_put'] = df['cross_down'] & df['vol_confirm']
     return df.dropna(subset=['ma9', 'ma20', 'vol_avg20']).reset_index()
 
+def simulate_trade(df, entry_index, direction):
+    entry_price = df.loc[entry_index, 'Close']
+    entry_ma9, entry_ma20_direction = df.loc[entry_index, 'ma9'], df.loc[entry_index, 'ma20']
+
+    for offset in range(1, max_hold + 1):
+        i = entry_index + offset
+        if i >= len(df):
+            break
+
+        price_now = df.loc[i, 'Close']
+        raw_move = (price_now - entry_price) / entry_price
+        option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
+
+        if option_move <= -stop_loss:
+            return i, -stop_loss, 'stop_loss'
+
+        if option_move >= take_profit:
+            return i, take_profit, 'take_profit'
+
+        ma9_now, ma20_now = df.loc[i, 'ma9'], df.loc[i, 'ma20']
+        if direction == 'call' and ma9_now < ma20_now:
+            return i, option_move, 'signal_reversal'
+        if direction == 'put' and ma9_now > ma20_now:
+            return i, option_move, 'signal_reversal'
+
+    
