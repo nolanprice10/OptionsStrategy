@@ -21,12 +21,11 @@ def load_data(ticker, period, interval):
     df['vol_avg20'] = df['Volume'].rolling(20).mean()
     df['cross_up'] = (df['ma9'] > df['ma20']) & (df['ma9'].shift(1) <= df['ma20'].shift(1))
     df['cross_down'] = (df['ma9'] < df['ma20']) & (df['ma9'].shift(1) >= df['ma20'].shift(1))
-    print(type(df['Volume']))
-    print(type(df['vol_avg20']))
-    print(df['Volume'].index[:5])
-    print(df['vol_avg20'].index[:5])
-    print(df.columns.tolist())
-    df['vol_confirm'] = df['Volume'] > vol_multiplier * df['vol_avg20']
+    df = df.reset_index(drop=True)
+    left = df['Volume']
+    right = df['vol_avg20']
+    left, right = left.align(right, join='inner')
+    df['vol_confirm'] = left > (right * vol_multiplier)
     df['buy_call'] = df['cross_up'] & df['vol_confirm']
     df['buy_put'] = df['cross_down'] & df['vol_confirm']
     return df.dropna(subset=['ma9', 'ma20', 'vol_avg20']).reset_index()
@@ -104,19 +103,19 @@ def print_summary(trades_df, final_balance):
     wins = trades_df[trades_df['pnl_dollars'] > 0]
     losses = trades_df[trades_df['pnl_dollars'] <= 0]
 
-    print(f'\n{'='*50}')
-    print(f'Backtest Results: {ticker}')
-    print(f'{'='*50}')
-    print(f'Total Trades: {len(trades_df)}')
-    print(f'Win rate: {len(wins) / len(trades_df) * 100:.2f}%')
-    print(f'Avg win: {wins['pnl'].mean():.2f}%') if len(wins) else 'Avg win: N/A'
-    print(f'Avg loss: {losses['pnl'].mean():.2f}%') if len(losses) else 'Avg loss: N/A'
-    print(f'Starting balance: ${starting_balance:.2f}')
-    print(f'Final balance: ${final_balance:.2f}')
-    print(f'Total return: {(final_balance/starting_balance - 1) * 100:.2f}%')
-    print(f'Max single win: {trades_df['pnl_dollars'].max():.2f}')
-    print(f'Max single loss: {trades_df['pnl_dollars'].min():.2f}')
-    print(f'{'='*50}\n')
+    print(f"\n{'='*50}")
+    print(f"Backtest Results: {ticker}")
+    print(f"{'='*50}")
+    print(f"Total Trades: {len(trades_df)}")
+    print(f"Win rate: {len(wins) / len(trades_df) * 100:.2f}%")
+    print(f"Avg win: {wins['pnl'].mean():.2f}%") if len(wins) else 'Avg win: N/A'
+    print(f"Avg loss: {losses['pnl'].mean():.2f}%") if len(losses) else 'Avg loss: N/A'
+    print(f"Starting balance: ${starting_balance:.2f}")
+    print(f"Final balance: ${final_balance:.2f}")
+    print(f"Total return: {(final_balance/starting_balance - 1) * 100:.2f}%")
+    print(f"Max single win: {trades_df['pnl_dollars'].max():.2f}")
+    print(f"Max single loss: {trades_df['pnl_dollars'].min():.2f}")
+    print(f"{'='*50}\n")
     print(trades_df.to_string(index=False))
 
 if __name__ == '__main__':
