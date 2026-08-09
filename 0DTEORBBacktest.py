@@ -101,4 +101,18 @@ def run_backtest():
         pnl_dollars = result['pnl'] * risk_amount
         balance += pnl_dollars
 
-        
+        trades.append({
+            'date': day,
+            'entry_time': result['entry_time'],
+            'exit_time': result['exit_time'],
+            'direction': result['direction'],
+            'pnl': round(result['pnl'] * 100, 2),
+            'pnl_dollars': round(pnl_dollars, 2),
+            'balance_after_trade': round(balance, 2),
+            'exit_reason': result['exit_reason'],
+        })
+
+        if balance <= 0:
+            break
+
+    return pd.DateFrame(trades), balance
