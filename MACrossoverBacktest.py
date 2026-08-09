@@ -2,16 +2,16 @@ import yfinance as yf
 import pandas as pd
 
 ticker = 'SPY'
-period = '2y'
+period = 'max'
 interval = '1d'
 
-stop_loss = 0.5
-take_profit = 0.5
+stop_loss = 0.3
+take_profit = 0.7
 max_hold = 14
 leverage = 4.0
 
 starting_balance = 100
-risk_per_trade = 1
+risk_per_trade = 0.3
 
 def load_data(ticker, period, interval):
     df = yf.download(ticker, period=period, interval=interval, auto_adjust=True)
