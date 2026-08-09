@@ -90,3 +90,30 @@ def run_backtest(ticker=ticker, period=period, interval=interval):
             i += 1
 
     return pd.DataFrame(trades), balance
+
+def print_summary(trades_df, final_balance):
+    if trades_df.empty:
+        print("No trades were executed.")
+        return
+
+    wins = trades_df[trades_df['pnl_dollars'] > 0]
+    losses = trades_df[trades_df['pnl_dollars'] <= 0]
+
+    print(f'\n{'='*50}')
+    print(f'Backtest Results: {ticker}')
+    print(f'{'='*50}')
+    print(f'Total Trades: {len(trades_df)}')
+    print(f'Win rate: {len(wins) / len(trades_df) * 100:.2f}%')
+    print(f'Avg win: {wins['pnl'].mean():.2f}%') if len(wins) else 'Avg win: N/A'
+    print(f'Avg loss: {losses['pnl'].mean():.2f}%') if len(losses) else 'Avg loss: N/A'
+    print(f'Starting balance: ${starting_balance:.2f}')
+    print(f'Final balance: ${final_balance:.2f}')
+    print(f'Total return: {(final_balance/starting_balance - 1) * 100:.2f}%')
+    print(f'Max single win: {trades_df['pnl_dollars'].max():.2f}')
+    print(f'Max single loss: {trades_df['pnl_dollars'].min():.2f}')
+    print(f'{'='*50}\n')
+    print(trades_df.to_string(index=False))
+
+if __name__ == '__main__':
+    trades_df, final_balance = run_backtest()
+    print_summary(trades_df, final_balance)
