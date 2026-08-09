@@ -1,37 +1,32 @@
 import yfinance as yf
 import pandas as pd
 
-ticker = 'F'
+ticker = 'SPY'
 period = '2y'
 interval = '1d'
 
-stop_loss = 0.35
-take_profit = 0.7
-max_hold = 10
-vol_multiplier = 1.2
+stop_loss = 0.5
+take_profit = 0.5
+max_hold = 14
 leverage = 4.0
 
-starting_balance = 50
+starting_balance = 100
 risk_per_trade = 1
 
 def load_data(ticker, period, interval):
     df = yf.download(ticker, period=period, interval=interval, auto_adjust=True)
     df.columns = df.columns.droplevel(1)
-    print(df.columns)
-    print(type(df['Volume']))
-    df['ma5'] = df['Close'].rolling(5).mean()
-    df['ma13'] = df['Close'].rolling(13).mean()
-    df['vol_avg13'] = df['Volume'].rolling(13).mean()
-    df['cross_up'] = (df['ma5'] > df['ma13']) & (df['ma5'].shift(1) <= df['ma13'].shift(1))
-    df['cross_down'] = (df['ma5'] < df['ma13']) & (df['ma5'].shift(1) >= df['ma13'].shift(1))
-    df['vol_confirm'] = df['Volume'] > (df['vol_avg13'] * vol_multiplier)
-    df['buy_call'] = df['cross_up'] & df['vol_confirm']
-    df['buy_put'] = df['cross_down'] & df['vol_confirm']
-    return df.dropna(subset=['ma5', 'ma13', 'vol_avg13']).reset_index()
+    df['ma10'] = df['Close'].rolling(10).mean()
+    df['ma30'] = df['Close'].rolling(30).mean()
+    df['cross_up'] = (df['ma10'] > df['ma30']) & (df['ma10'].shift(1) <= df['ma30'].shift(1))
+    df['cross_down'] = (df['ma10'] < df['ma30']) & (df['ma10'].shift(1) >= df['ma30'].shift(1))
+    df['buy_call'] = df['cross_up']
+    df['buy_put'] = df['cross_down']
+    return df.dropna(subset=['ma10', 'ma30']).reset_index()
 
 def simulate_trade(df, entry_index, direction):
     entry_price = df.loc[entry_index, 'Close']
-    entry_ma5, entry_ma13_direction = df.loc[entry_index, 'ma5'], df.loc[entry_index, 'ma13']
+    entry_ma10, entry_ma30_direction = df.loc[entry_index, 'ma10'], df.loc[entry_index, 'ma30']
 
     for offset in range(1, max_hold + 1):
         i = entry_index + offset
@@ -48,10 +43,10 @@ def simulate_trade(df, entry_index, direction):
         if option_move >= take_profit:
             return i, take_profit, 'take_profit'
 
-        ma5_now, ma13_now = df.loc[i, 'ma5'], df.loc[i, 'ma13']
-        if direction == 'call' and ma5_now < ma13_now:
+        ma10_now, ma30_now = df.loc[i, 'ma10'], df.loc[i, 'ma30']
+        if direction == 'call' and ma10_now < ma30_now:
             return i, option_move, 'signal_reversal'
-        if direction == 'put' and ma5_now > ma13_now:
+        if direction == 'put' and ma10_now > ma30_now:
             return i, option_move, 'signal_reversal'
 
     i = min(entry_index + max_hold, len(df) - 1)
