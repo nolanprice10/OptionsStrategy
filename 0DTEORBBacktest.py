@@ -77,3 +77,9 @@ def simulate_day(day_df, day):
         if ts >= force_exit:
             return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
                     'pnl': option_move, 'exit_reason': 'eod_exit'}
+
+    last_row = day_df.iloc[-1]
+    raw_move = (last_row['Close'] - entry_price) / entry_price
+    option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
+    return {'entry_time': entry_time, 'exit_time': last_row.name, 'direction': direction,
+            'pnl': option_move, 'exit_reason': 'eod_exit'}
