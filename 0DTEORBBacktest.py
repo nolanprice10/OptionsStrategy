@@ -29,4 +29,20 @@ def load_data(ticker, period, interval):
 
 def get_daily_sessions(df):
     return sorted(df['date'].unique())
-   
+
+def simulate_day(day_df, day):
+    day_df = day_df.between_time(market_open, market_close)
+    if len(day_df) < or_bars + 1:
+        return None
+
+    opening_range = day_df.iloc[:or_bars]
+    or_high = opening_range['High'].max()
+    or_low = opening_range['Low'].min()
+
+    post_or = day_df.iloc[or_bars:]
+    force_exit = pd.Timestamp.combine(day, pd.Timestamp(force_exit_time).time()).tz_localize('America/New_York')
+
+    direction = None
+    entry_price = None
+    entry_time = None
+    
