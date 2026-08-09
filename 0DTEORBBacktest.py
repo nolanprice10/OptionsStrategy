@@ -60,3 +60,20 @@ def simulate_day(day_df, day):
 
     if direction is None:
         return None
+
+    remaining = day_df[day_df.index > entry_time]
+
+    for ts, row in remaining.iterrows():
+        price_now = row['Close']
+        raw_move = (price_now - entry_price) / entry_price
+        option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
+
+        if option_move <= -stop_loss:
+            return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
+                    'pnl': -stop_loss, 'exit_reason': 'stop_loss'}
+        if option_move >= take_profit:
+            return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
+                    'pnl': take_profit, 'exit_reason': 'take_profit'}
+        if ts >= force_exit:
+            return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
+                    'pnl': option_move, 'exit_reason': 'eod_exit'}
