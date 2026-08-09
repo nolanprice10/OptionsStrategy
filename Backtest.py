@@ -57,3 +57,36 @@ def simulate_trade(df, entry_index, direction):
     option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
     return i, option_move, 'time_exit'
 
+def run_backtest(ticker=ticker, period=period, interval=interval):
+    df = load_data(ticker, period, interval)
+
+    trades = []
+    balance = starting_balance
+    i = 0
+    while i < len(df) - 1:
+        row = df.loc[i]
+        if row['buy_call'] or row['buy_put']:
+            direction = 'call' if row['buy_call'] else 'put'
+            exit_index, pnl, reason = simulate_trade(df, i, direction)
+
+            risk_amount = balance * risk_per_trade
+            pnl_dollars = pnl * risk_amount
+            balance += pnl_dollars
+
+            trades.append({
+                'entry_date': df.loc[i, 'Date'],
+                'exit_date': df.loc[exit_index, 'Date'],
+                'direction': direction,
+                'pnl': round(pnl * 100, 2),
+                'pnl_dollars': round(pnl_dollars, 2),
+                'balance_after_trade': round(balance, 2),
+                'exit_reason': reason,
+            })
+
+            i = exit_index + 1
+            if balance <= 0:
+                break
+        else:
+            i += 1
+
+    return pd.DataFrame(trades), balance
