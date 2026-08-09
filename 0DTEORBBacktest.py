@@ -45,4 +45,18 @@ def simulate_day(day_df, day):
     direction = None
     entry_price = None
     entry_time = None
-    
+
+    for ts, row in post_or.iterrows():
+        if row['Close'] > or_high:
+            direction = 'call'
+            entry_price = row['Close']
+            entry_time = ts
+            break
+        if row['Close'] < or_low:
+            direction = 'put'
+            entry_price = row['Close']
+            entry_time = ts
+            break
+
+    if direction is None:
+        return None
