@@ -115,4 +115,30 @@ def run_backtest():
         if balance <= 0:
             break
 
-    return pd.DateFrame(trades), balance
+    return pd.DataFrame(trades), balance
+
+def print_summary(trades_df, final_balance):
+    if trades_df.empty:
+        print("No trades were made.")
+        return
+
+    wins = trades_df[trades_df['pnl_dollars'] > 0]
+    losses = trades_df[trades_df['pnl_dollars'] <= 0]
+
+    print(f"\n{'='*50}")
+    print(f"0DTE ORB Scalp Backtest: {ticker}")
+    print(f"{'='*50}")
+    print(f"Total Trades: {len(trades_df)}")
+    print(f"Win rate: {len(wins) / len(trades_df) * 100:.2f}%")
+    if len(wins):
+        print(f"Avg win: {wins['pnl'].mean():.2f}%")
+    if len(losses):
+        print(f"Avg loss: {losses['pnl'].mean():.2f}%")
+    print(f"Starting balance: ${starting_balance:.2f}")
+    print(f"Final balance: ${final_balance:.2f}")
+    print(f"Total return: {(final_balance/starting_balance - 1) * 100:.2f}%")
+    print(f"Max single win: {trades_df['pnl_dollars'].max():.2f}")
+    print(f"Max single loss: {trades_df['pnl_dollars'].min():.2f}")
+    print(f"{'='*50}\n")
+    print(trades_df.to_string(index=False))
+    
