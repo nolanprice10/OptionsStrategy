@@ -19,3 +19,11 @@ market_open = '09:30:00'
 market_close = '16:00:00'
 force_exit_time = '15:45:00'
 
+def load_data(ticker, period, interval):
+    df = yf.download(ticker, period=period, interval=interval, auto_adjust=True, prepost=False)
+    df.columns = df.columns.droplevel(1)
+    df.index = df.index.tz_convert('America/New_York')
+    df['date'] = df.index.date
+    df['time'] = df.index.time
+    return df
+   
