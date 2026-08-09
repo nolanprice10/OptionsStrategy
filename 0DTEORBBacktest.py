@@ -141,4 +141,7 @@ def print_summary(trades_df, final_balance):
     print(f"Max single loss: {trades_df['pnl_dollars'].min():.2f}")
     print(f"{'='*50}\n")
     print(trades_df.to_string(index=False))
-    
+
+if __name__ == '__main__':
+    trades_df, final_balance = run_backtest()
+    print_summary(trades_df, final_balance)
