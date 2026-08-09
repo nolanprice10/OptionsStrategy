@@ -24,7 +24,7 @@ def load_data(ticker, period, interval):
     df = df.reset_index(drop=True)
     left = df['Volume']
     right = df['vol_avg20']
-    left, right = left.align(right, join='inner')
+    left, right = left.align(right, join='inner', axis=0)
     df['vol_confirm'] = left > (right * vol_multiplier)
     df['buy_call'] = df['cross_up'] & df['vol_confirm']
     df['buy_put'] = df['cross_down'] & df['vol_confirm']
