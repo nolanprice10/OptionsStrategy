@@ -21,6 +21,11 @@ def load_data(ticker, period, interval):
     df['vol_avg20'] = df['Volume'].rolling(20).mean()
     df['cross_up'] = (df['ma9'] > df['ma20']) & (df['ma9'].shift(1) <= df['ma20'].shift(1))
     df['cross_down'] = (df['ma9'] < df['ma20']) & (df['ma9'].shift(1) >= df['ma20'].shift(1))
+    print(type(df['Volume']))
+    print(type(df['vol_avg20']))
+    print(df['Volume'].index[:5])
+    print(df['vol_avg20'].index[:5])
+    print(df.columns.tolist())
     df['vol_confirm'] = df['Volume'] > vol_multiplier * df['vol_avg20']
     df['buy_call'] = df['cross_up'] & df['vol_confirm']
     df['buy_put'] = df['cross_down'] & df['vol_confirm']
