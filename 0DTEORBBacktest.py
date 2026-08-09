@@ -26,4 +26,7 @@ def load_data(ticker, period, interval):
     df['date'] = df.index.date
     df['time'] = df.index.time
     return df
+
+def get_daily_sessions(df):
+    return sorted(df['date'].unique())
    
