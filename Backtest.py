@@ -51,4 +51,9 @@ def simulate_trade(df, entry_index, direction):
         if direction == 'put' and ma9_now > ma20_now:
             return i, option_move, 'signal_reversal'
 
-    
+    i = min(entry_index + max_hold, len(df) - 1)
+    price_now = df.loc[i, 'Close']
+    raw_move = (price_now - entry_price) / entry_price
+    option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
+    return i, option_move, 'time_exit'
+
