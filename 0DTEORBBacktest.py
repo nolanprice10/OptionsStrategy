@@ -14,3 +14,8 @@ leverage = 8.0
 
 starting_balance = 100
 risk_per_trade = 0.2
+
+market_open = '09:30:00'
+market_close = '16:00:00'
+force_exit_time = '15:45:00'
+
