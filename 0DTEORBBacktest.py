@@ -1,19 +1,19 @@
 import yfinance as yf
 import pandas as pd
 
-ticker = 'SPY'
+ticker = 'QQQ'
 interval = '5m'
 period = '60d'
 
 or_minutes = 15
 or_bars = or_minutes // 5
 
-stop_loss = 0.5
-take_profit = 0.5
-leverage = 8.0
+stop_loss = 0.2
+take_profit = 0.45
+leverage = 12.0
 
-starting_balance = 100
-risk_per_trade = 0.2
+starting_balance = 50
+risk_per_trade = 1
 
 market_open = '09:30:00'
 market_close = '16:00:00'
@@ -21,10 +21,12 @@ force_exit_time = '15:45:00'
 
 def load_data(ticker, period, interval):
     df = yf.download(ticker, period=period, interval=interval, auto_adjust=True, prepost=False)
-    df.columns = df.columns.droplevel(1)
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.droplevel(1)
     df.index = df.index.tz_convert('America/New_York')
     df['date'] = df.index.date
     df['time'] = df.index.time
+    df['Vol_SMA10'] = df['Volume'].rolling(10).mean()
     return df
 
 def get_daily_sessions(df):
@@ -47,6 +49,8 @@ def simulate_day(day_df, day):
     entry_time = None
 
     for ts, row in post_or.iterrows():
+        vol_avg = row['Vol_SMA10'] if not pd.isna(row['Vol_SMA10']) else row['Volume']
+        volume_confirmed = row['Volume'] >= (2.0 * vol_avg)
         if row['Close'] > or_high:
             direction = 'call'
             entry_price = row['Close']
@@ -64,19 +68,29 @@ def simulate_day(day_df, day):
     remaining = day_df[day_df.index > entry_time]
 
     for ts, row in remaining.iterrows():
-        price_now = row['Close']
-        raw_move = (price_now - entry_price) / entry_price
-        option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
+        high_move = (row['High'] - entry_price) / entry_price
+        low_move = (row['Low'] - entry_price) / entry_price
+        
+        if direction == 'call':
+            max_option_pnl = high_move * leverage
+            min_option_pnl = low_move * leverage
+        else:
+            max_option_pnl = -low_move * leverage
+            min_option_pnl = -high_move * leverage
 
-        if option_move <= -stop_loss:
+        if min_option_pnl <= -stop_loss:
             return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
                     'pnl': -stop_loss, 'exit_reason': 'stop_loss'}
-        if option_move >= take_profit:
+
+        if max_option_pnl >= take_profit:
             return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
                     'pnl': take_profit, 'exit_reason': 'take_profit'}
+
         if ts >= force_exit:
+            close_move = (row['Close'] - entry_price) / entry_price
+            close_pnl = close_move * leverage if direction == 'call' else -close_move * leverage
             return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
-                    'pnl': option_move, 'exit_reason': 'eod_exit'}
+                    'pnl': close_pnl, 'exit_reason': 'eod_exit'}
 
     last_row = day_df.iloc[-1]
     raw_move = (last_row['Close'] - entry_price) / entry_price
