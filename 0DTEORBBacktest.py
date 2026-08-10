@@ -1,12 +1,14 @@
 import yfinance as yf
 import pandas as pd
 
-ticker = 'QQQ'
+ticker = 'SPY'
 interval = '5m'
 period = '60d'
 
-or_minutes = 15
+or_minutes = 30
 or_bars = or_minutes // 5
+max_hold_bars = 3
+breakout_buffer = 0.001
 
 stop_loss = 0.2
 take_profit = 0.45
@@ -51,12 +53,12 @@ def simulate_day(day_df, day):
     for ts, row in post_or.iterrows():
         vol_avg = row['Vol_SMA10'] if not pd.isna(row['Vol_SMA10']) else row['Volume']
         volume_confirmed = row['Volume'] >= (2.0 * vol_avg)
-        if row['Close'] > or_high:
+        if row['Close'] > (or_high * (1 + breakout_buffer)) and volume_confirmed:
             direction = 'call'
             entry_price = row['Close']
             entry_time = ts
             break
-        if row['Close'] < or_low:
+        elif row['Close'] < (or_low * (1 - breakout_buffer)) and volume_confirmed:
             direction = 'put'
             entry_price = row['Close']
             entry_time = ts
@@ -66,8 +68,11 @@ def simulate_day(day_df, day):
         return None
 
     remaining = day_df[day_df.index > entry_time]
+    bars_held = 0
 
     for ts, row in remaining.iterrows():
+        bars_held += 1
+
         high_move = (row['High'] - entry_price) / entry_price
         low_move = (row['Low'] - entry_price) / entry_price
         
@@ -86,12 +91,12 @@ def simulate_day(day_df, day):
             return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
                     'pnl': take_profit, 'exit_reason': 'take_profit'}
 
-        if ts >= force_exit:
+        if bars_held >= max_hold_bars or ts >= force_exit:
             close_move = (row['Close'] - entry_price) / entry_price
             close_pnl = close_move * leverage if direction == 'call' else -close_move * leverage
             return {'entry_time': entry_time, 'exit_time': ts, 'direction': direction,
-                    'pnl': close_pnl, 'exit_reason': 'eod_exit'}
-
+                    'pnl': close_pnl, 'exit_reason': 'time_exit'}
+        
     last_row = day_df.iloc[-1]
     raw_move = (last_row['Close'] - entry_price) / entry_price
     option_move = raw_move * leverage if direction == 'call' else -raw_move * leverage
