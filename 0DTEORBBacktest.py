@@ -11,8 +11,8 @@ max_hold_bars = 3
 breakout_buffer = 0.001
 
 stop_loss = 0.2
-take_profit = 0.45
-leverage = 12.0
+take_profit = 0.35
+leverage = 35.0
 
 starting_balance = 50
 risk_per_trade = 1
