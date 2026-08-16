@@ -56,5 +56,25 @@ def backtest(ticker, starting_capital=150000, stop_loss=0.08):
     benchmark_shares = starting_capital / float(close.iloc[200])
     benchmark_final = benchmark_shares * float(close.iloc[-1])
     benchmark_return = ((benchmark_final - starting_capital) / starting_capital) * 100
-    
+    eq_series = pd.Series(equity_curve)
+    rolling_max = eq_series.cummax()
+    drawdowns = (eq_series - rolling_max) / rolling_max
+    max_drawdown = drawdowns.min()*100
+
+    print(f"\n" + "="*50)
+    print(f"Backtest Summary for {ticker} (3 years):")
+    print("="*50)
+    print(f"Starting Capital: ${starting_capital:,.2f}")
+    print(f"Final Portfolio Value: ${final_value:,.2f}")
+    print(f"Buy & Hold Value: ${benchmark_final:,.2f} ({benchmark_return:.2f}%)")
+    print(f"Max Drawdown: {max_drawdown:.2f}%")
+    print(f"Total Trades: {len(trades)}")
+    print("="*50)
+
+    return pd.DataFrame(trades)
+
+trade_log = backtest('SPY', starting_capital=150000)
+if not trade_log.empty:
+    print("\nRecent Trades:")
+    print(trade_log.tail(6).to_string(index=False))
     
